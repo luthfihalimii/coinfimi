@@ -1,0 +1,22 @@
+# Build artifacts
+cryptex
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# Test runners
+tests/bin/
+/test_*
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Data runtime files (preserve directory via .gitkeep)
+data/*.csv
+!data/.gitkeep
