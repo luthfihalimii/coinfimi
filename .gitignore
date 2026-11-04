@@ -20,3 +20,7 @@ tests/bin/
 # Data runtime files (preserve directory via .gitkeep)
 data/*.csv
 !data/.gitkeep
+
+# Local project documents
+PRD.md
+ARCHITECTURE.md
