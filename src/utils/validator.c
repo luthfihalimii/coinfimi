@@ -1,8 +1,9 @@
 #include "validator.h"
+#include <math.h>
 #include <string.h>
 
 int validate_amount(double amount) {
-    return (amount > 0.0);
+    return isfinite(amount) && amount > 0.0;
 }
 
 int validate_symbol(const char *symbol) {

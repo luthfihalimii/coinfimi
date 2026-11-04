@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "cryptex.h"
 #include "utils/validator.h"
 
@@ -8,6 +9,8 @@ static void test_validate_amount(void) {
     assert(validate_amount(0.00000001) == 1);
     assert(validate_amount(0.0) == 0);
     assert(validate_amount(-1.0) == 0);
+    assert(validate_amount(INFINITY) == 0);
+    assert(validate_amount(NAN) == 0);
 }
 
 static void test_validate_symbol(void) {

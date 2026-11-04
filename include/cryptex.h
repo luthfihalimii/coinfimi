@@ -37,7 +37,10 @@ typedef struct {
     char name[MAX_NAME_LEN];
     char symbol[MAX_SYMBOL_LEN];
     double price_usd;
+    double price_idr;
+    double price_eur;
     double percent_change_24h;
+    double market_cap;
     char last_updated[MAX_TIMESTAMP_LEN];
 } Coin;
 

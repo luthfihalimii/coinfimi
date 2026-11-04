@@ -31,6 +31,19 @@ static void test_convert_currency_invalid(void) {
     assert(convert_currency(1.0, -100.0, 3200.0) == -1.0);
 }
 
+static void test_convert_rejects_non_finite(void) {
+    assert(convert_currency(INFINITY, 95000.0, 3200.0) == -1.0);
+    assert(convert_currency(1.0, INFINITY, 3200.0) == -1.0);
+    assert(convert_currency(1.0, 95000.0, INFINITY) == -1.0);
+    assert(convert_currency(NAN, 95000.0, 3200.0) == -1.0);
+
+    double result = 0.0;
+    double rate = 0.0;
+    assert(convert_calculate(INFINITY, 95000.0, 3200.0, &result, &rate) == CRYPTEX_ERR_INVALID_PARAM);
+    assert(convert_calculate(1.0, NAN, 3200.0, &result, &rate) == CRYPTEX_ERR_INVALID_PARAM);
+    assert(convert_calculate(1.0, 95000.0, INFINITY, &result, &rate) == CRYPTEX_ERR_INVALID_PARAM);
+}
+
 static void test_convert_calculate_status(void) {
     double result = 0.0;
     double rate = 0.0;
@@ -49,6 +62,7 @@ int main(void) {
     printf("[TEST] Running test_converter...\n");
     test_convert_currency_basic();
     test_convert_currency_invalid();
+    test_convert_rejects_non_finite();
     test_convert_calculate_status();
     printf("[TEST] test_converter PASSED.\n");
     return 0;
