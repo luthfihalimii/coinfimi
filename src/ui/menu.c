@@ -113,6 +113,34 @@ static int read_amount(const char *prompt, double *out) {
     }
 }
 
+static int normalize_symbol(const char *input, char *out, size_t size) {
+    if (!input || !out || size == 0) {
+        return -1;
+    }
+
+    if (strcasecmp(input, "USD") == 0) {
+        snprintf(out, size, "USD");
+        return 0;
+    }
+    if (strcasecmp(input, "IDR") == 0) {
+        snprintf(out, size, "IDR");
+        return 0;
+    }
+    if (strcasecmp(input, "EUR") == 0) {
+        snprintf(out, size, "EUR");
+        return 0;
+    }
+
+    int index = market_find_coin(input);
+    if (index >= 0) {
+        const CoinInfo *registry = market_get_registry(NULL);
+        snprintf(out, size, "%s", registry[index].symbol);
+        return 0;
+    }
+
+    return -1;
+}
+
 static int read_symbol(const char *prompt, char *out, size_t size) {
     char buffer[INPUT_SIZE];
 
@@ -128,23 +156,7 @@ static int read_symbol(const char *prompt, char *out, size_t size) {
             continue;
         }
 
-        if (strcasecmp(buffer, "USD") == 0) {
-            snprintf(out, size, "USD");
-            return 0;
-        }
-        if (strcasecmp(buffer, "IDR") == 0) {
-            snprintf(out, size, "IDR");
-            return 0;
-        }
-        if (strcasecmp(buffer, "EUR") == 0) {
-            snprintf(out, size, "EUR");
-            return 0;
-        }
-
-        int index = market_find_coin(buffer);
-        if (index >= 0) {
-            const CoinInfo *registry = market_get_registry(NULL);
-            snprintf(out, size, "%s", registry[index].symbol);
+        if (normalize_symbol(buffer, out, size) == 0) {
             return 0;
         }
 
@@ -286,6 +298,25 @@ static void print_price_timestamps(const char *from_symbol, const Coin *from_coi
     }
 }
 
+static int save_conversion(const char *from_symbol, const char *to_symbol,
+                           double amount, double exchange_rate, double result) {
+    Conversion conversion = {0};
+    snprintf(conversion.from_symbol, sizeof(conversion.from_symbol), "%s", from_symbol);
+    snprintf(conversion.to_symbol, sizeof(conversion.to_symbol), "%s", to_symbol);
+    conversion.amount = amount;
+    conversion.exchange_rate = exchange_rate;
+    conversion.result = result;
+
+    time_t now = time(NULL);
+    struct tm *local = localtime(&now);
+    if (local) {
+        strftime(conversion.timestamp, sizeof(conversion.timestamp),
+                 "%Y-%m-%d %H:%M:%S", local);
+    }
+
+    return history_save(&conversion);
+}
+
 void display_main_menu(void) {
     printf("\n MAIN MENU\n\n");
     printf("  1. Currency Converter\n");
@@ -411,21 +442,7 @@ static void run_converter(void) {
         print_price_timestamps(from_symbol, from_coin, to_symbol, to_coin);
         printf("\n%s\n", CONVERTER_SEPARATOR);
 
-        Conversion conversion = {0};
-        snprintf(conversion.from_symbol, sizeof(conversion.from_symbol), "%s", from_symbol);
-        snprintf(conversion.to_symbol, sizeof(conversion.to_symbol), "%s", to_symbol);
-        conversion.amount = amount;
-        conversion.exchange_rate = rate;
-        conversion.result = result;
-
-        time_t now = time(NULL);
-        struct tm *local = localtime(&now);
-        if (local) {
-            strftime(conversion.timestamp, sizeof(conversion.timestamp),
-                     "%Y-%m-%d %H:%M:%S", local);
-        }
-
-        if (history_save(&conversion) != 0) {
+        if (save_conversion(from_symbol, to_symbol, amount, rate, result) != 0) {
             printf(" Warning: failed to save conversion history.\n");
         }
 
@@ -523,6 +540,85 @@ static void refresh_market_data(void) {
     }
 
     ui_pause();
+}
+
+static void print_cli_usage(FILE *stream, const char *program) {
+    fprintf(stream, "Usage: %s <FROM> <AMOUNT> <TO>\n", program);
+    fprintf(stream, "Example: %s BTC 0.5 USD\n", program);
+    fprintf(stream, "Run without arguments for interactive mode.\n");
+}
+
+int run_cli(int argc, char **argv) {
+    if (argc == 2 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+        print_cli_usage(stdout, argv[0]);
+        return 0;
+    }
+
+    if (argc != 4) {
+        print_cli_usage(stderr, argv[0]);
+        return 1;
+    }
+
+    char from_symbol[MAX_SYMBOL_LEN];
+    char to_symbol[MAX_SYMBOL_LEN];
+    if (normalize_symbol(argv[1], from_symbol, sizeof(from_symbol)) != 0) {
+        fprintf(stderr, "Unsupported currency: %s\n", argv[1]);
+        return 1;
+    }
+    if (normalize_symbol(argv[3], to_symbol, sizeof(to_symbol)) != 0) {
+        fprintf(stderr, "Unsupported currency: %s\n", argv[3]);
+        return 1;
+    }
+
+    char *end = NULL;
+    double amount = strtod(argv[2], &end);
+    if (end == argv[2] || *end != '\0' || !validate_amount(amount)) {
+        fprintf(stderr, "Invalid amount: %s\n", argv[2]);
+        return 1;
+    }
+
+    double from_price = 0.0;
+    double to_price = 0.0;
+    if (market_get_usd_price(from_symbol, &from_price) != 0) {
+        fprintf(stderr, "Failed to fetch %s price. Check your connection.\n", from_symbol);
+        return 1;
+    }
+    if (market_get_usd_price(to_symbol, &to_price) != 0) {
+        fprintf(stderr, "Failed to fetch %s price. Check your connection.\n", to_symbol);
+        return 1;
+    }
+
+    const Coin *from_coin = NULL;
+    const Coin *to_coin = NULL;
+    if (market_find_coin(from_symbol) >= 0) {
+        from_coin = market_get_coin_by_symbol(from_symbol);
+    }
+    if (market_find_coin(to_symbol) >= 0) {
+        to_coin = market_get_coin_by_symbol(to_symbol);
+    }
+
+    double result = 0.0;
+    double rate = 0.0;
+    if (convert_calculate(amount, from_price, to_price, &result, &rate) != CRYPTEX_OK) {
+        fprintf(stderr, "Conversion failed: invalid amount or price.\n");
+        return 1;
+    }
+
+    print_value(amount, from_symbol);
+    printf(" = ");
+    print_value(result, to_symbol);
+    printf("\nRate: ");
+    print_rate(rate, to_symbol);
+    printf(" / %s\n", from_symbol);
+    printf("Updated: ");
+    print_price_timestamps(from_symbol, from_coin, to_symbol, to_coin);
+    printf("\n");
+
+    if (save_conversion(from_symbol, to_symbol, amount, rate, result) != 0) {
+        fprintf(stderr, "Warning: failed to save conversion history.\n");
+    }
+
+    return 0;
 }
 
 void main_menu(void) {

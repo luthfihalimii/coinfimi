@@ -62,4 +62,21 @@ check_contains "Showing last 20 of 25" "$OUT"
 OUT=$(printf '4\n1\n1\n\n0\n' | "$BIN")
 check_contains "History cleared." "$OUT"
 
+OUT=$("$BIN" --help 2>&1)
+check_contains "Usage:" "$OUT"
+
+OUT=$("$BIN" BTC 0.5 2>&1 || true)
+check_contains "Usage:" "$OUT"
+
+OUT=$("$BIN" NOPE 1 USD 2>&1 || true)
+check_contains "Unsupported currency" "$OUT"
+
+OUT=$("$BIN" BTC 0 USD 2>&1 || true)
+check_contains "Invalid amount" "$OUT"
+
+if "$BIN" NOPE 1 USD >/dev/null 2>&1; then
+    echo "FAIL: unsupported CLI currency should exit non-zero" >&2
+    exit 1
+fi
+
 printf '[TEST] test_ui PASSED.\n'

@@ -14,8 +14,13 @@ CURL_LIBS := -lcurl
 endif
 
 ifeq ($(strip $(CJSON_LIBS)),)
+ifneq ($(wildcard $(HOME)/.local/usr/include/cjson/cJSON.h),)
 CJSON_CFLAGS := -I$(HOME)/.local/usr/include
 CJSON_LIBS := -L$(HOME)/.local/usr/lib64 -lcjson
+else
+CJSON_CFLAGS :=
+CJSON_LIBS := -lcjson
+endif
 endif
 
 CPPFLAGS += $(CURL_CFLAGS) $(CJSON_CFLAGS)

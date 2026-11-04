@@ -25,13 +25,18 @@ void app_cleanup(void) {
     api_client_cleanup();
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     if (app_initialize() != CRYPTEX_OK) {
         return EXIT_FAILURE;
     }
 
-    main_menu();
+    int status = EXIT_SUCCESS;
+    if (argc > 1) {
+        status = run_cli(argc, argv);
+    } else {
+        main_menu();
+    }
 
     app_cleanup();
-    return EXIT_SUCCESS;
+    return status;
 }

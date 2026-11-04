@@ -1,5 +1,7 @@
 # CRYPTEX
 
+![CI](https://github.com/luthfihalimii/coinfimi/actions/workflows/ci.yml/badge.svg)
+
 CRYPTEX adalah aplikasi konversi cryptocurrency berbasis terminal yang ditulis
 dalam bahasa C. Aplikasi mengambil harga dari CoinPaprika API, menyimpan
 riwayat konversi dalam CSV, dan menyediakan antarmuka menu interaktif.
@@ -7,6 +9,8 @@ riwayat konversi dalam CSV, dan menyediakan antarmuka menu interaktif.
 ## Fitur
 
 - Konversi crypto ke crypto, crypto ke fiat, dan fiat ke crypto.
+- Mode interaktif dan CLI non-interaktif.
+- Waktu pembaruan harga ditampilkan dalam WIB (UTC+7).
 - Daftar cryptocurrency: BTC, ETH, USDT, BNB, SOL, XRP, DOGE, ADA, USDC, TRX,
   LINK, XLM, BCH, NEAR, UNI, LTC, SUI, AVAX, HBAR, dan ZEC.
 - Mata uang fiat yang didukung: USD, IDR, dan EUR.
@@ -37,7 +41,8 @@ Library: $HOME/.local/usr/lib64
 ```
 
 Makefile mencoba `pkg-config` terlebih dahulu. Jika tidak tersedia, Makefile
-memakai path lokal tersebut.
+memakai path lokal tersebut bila ada; jika tidak, memakai library cJSON sistem
+(`-lcjson`).
 
 ## Build
 
@@ -69,6 +74,26 @@ Menu utama:
 5. Refresh Market Data
 0. Exit
 ```
+
+### Mode CLI
+
+Konversi non-interaktif tanpa membuka menu:
+
+```bash
+./cryptex BTC 0.5 USD
+```
+
+Contoh output:
+
+```text
+0.5 BTC = $38,719.69
+Rate: $77,439.39 / BTC
+Updated: BTC 2026-11-04 12:36:14 WIB
+```
+
+Gunakan `./cryptex --help` untuk melihat format argumen. Tanpa argumen,
+aplikasi masuk ke menu interaktif. Error argumen, simbol, atau koneksi
+menghasilkan exit code non-zero.
 
 ### Converter
 
@@ -134,15 +159,20 @@ make test-api   # integrasi CoinPaprika, butuh internet
 make test-ui    # smoke test antarmuka, tanpa jaringan
 ```
 
+CI GitHub Actions menjalankan build, unit test, dan UI smoke test pada setiap
+push dan pull request. `make test-api` tidak dijalankan di CI karena
+membutuhkan jaringan dan bergantung pada CoinPaprika.
+
 Cakupan pengujian:
 
 - `test_converter`: akurasi konversi dan penolakan nilai tidak valid.
 - `test_validator`: validasi jumlah dan simbol.
 - `test_json_parser`: parsing JSON, quote USD/IDR/EUR, dan data opsional.
 - `test_history`: inisialisasi, simpan, baca, tampilkan, dan hapus riwayat.
+- `test_time_utils`: konversi timestamp UTC ke WIB, rollover hari, dan leap year.
 - `test_api_client`: request live, HTTP 404, kegagalan koneksi, dan kurs fiat.
-- `test_ui`: navigasi menu, format ribuan, batas tampilan riwayat, dan hapus
-  riwayat.
+- `test_ui`: navigasi menu, format ribuan, batas tampilan riwayat, hapus
+  riwayat, dan validasi argumen CLI.
 
 ## Struktur Proyek
 
@@ -153,11 +183,13 @@ src/api/api_client.c       HTTP client libcurl
 src/converter/converter.c  perhitungan konversi
 src/market/market.c        registry, cache, harga, dan kurs fiat
 src/history/history.c      penyimpanan dan pembacaan CSV
-src/ui/menu.c              dashboard dan navigasi terminal
+src/ui/menu.c              dashboard, navigasi terminal, dan mode CLI
 src/utils/json_parser.c    parsing response CoinPaprika
+src/utils/time_utils.c     konversi timestamp UTC ke WIB
 src/utils/validator.c      validasi input
 tests/                     unit, integrasi, dan smoke test
 data/                      penyimpanan riwayat runtime
+.github/workflows/ci.yml   build dan test otomatis di GitHub Actions
 ```
 
 ## Penanganan Error
