@@ -7,7 +7,8 @@ riwayat konversi dalam CSV, dan menyediakan antarmuka menu interaktif.
 ## Fitur
 
 - Konversi crypto ke crypto, crypto ke fiat, dan fiat ke crypto.
-- Daftar cryptocurrency: BTC, ETH, USDT, BNB, SOL, XRP, DOGE, dan ADA.
+- Daftar cryptocurrency: BTC, ETH, USDT, BNB, SOL, XRP, DOGE, ADA, USDC, TRX,
+  LINK, XLM, BCH, NEAR, UNI, LTC, SUI, AVAX, HBAR, dan ZEC.
 - Mata uang fiat yang didukung: USD, IDR, dan EUR.
 - Harga, perubahan 24 jam, market cap, dan waktu pembaruan dari CoinPaprika.
 - Refresh data harga secara manual tanpa polling otomatis.
@@ -80,7 +81,9 @@ TO currency: USD
 ```
 
 Simbol yang diterima: `BTC`, `ETH`, `USDT`, `BNB`, `SOL`, `XRP`, `DOGE`,
-`ADA`, `USD`, `IDR`, dan `EUR`. Input tidak membedakan huruf besar/kecil.
+`ADA`, `USDC`, `TRX`, `LINK`, `XLM`, `BCH`, `NEAR`, `UNI`, `LTC`, `SUI`,
+`AVAX`, `HBAR`, `ZEC`, `USD`, `IDR`, dan `EUR`. Input tidak membedakan
+huruf besar/kecil.
 
 ### History
 
@@ -104,7 +107,8 @@ GET https://api.coinpaprika.com/v1/tickers/{coin_id}?quotes=USD,IDR,EUR
 
 Aplikasi tidak membutuhkan API key. Timeout HTTP: 10 detik untuk koneksi dan
 15 detik total. Data harga disimpan sementara di memori selama aplikasi
-berjalan. Refresh manual mengambil ulang seluruh daftar.
+berjalan. Refresh manual mengambil ulang seluruh daftar. Waktu pembaruan harga
+ditampilkan dalam zona WIB (UTC+7).
 
 Riwayat disimpan di:
 

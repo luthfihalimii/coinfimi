@@ -1,6 +1,7 @@
 #include "market.h"
 #include "api/api_client.h"
 #include "utils/json_parser.h"
+#include "utils/time_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,19 @@ static const CoinInfo s_registry[] = {
     {"sol-solana", "Solana", "SOL"},
     {"xrp-xrp", "XRP", "XRP"},
     {"doge-dogecoin", "Dogecoin", "DOGE"},
-    {"ada-cardano", "Cardano", "ADA"}
+    {"ada-cardano", "Cardano", "ADA"},
+    {"usdc-usd-coin", "USDC", "USDC"},
+    {"trx-tron", "TRON", "TRX"},
+    {"link-chainlink", "Chainlink", "LINK"},
+    {"xlm-stellar", "Stellar", "XLM"},
+    {"bch-bitcoin-cash", "Bitcoin Cash", "BCH"},
+    {"near-near-protocol", "NEAR", "NEAR"},
+    {"uni-uniswap", "Uniswap", "UNI"},
+    {"ltc-litecoin", "Litecoin", "LTC"},
+    {"sui-sui", "Sui", "SUI"},
+    {"avax-avalanche", "Avalanche", "AVAX"},
+    {"hbar-hedera-hashgraph", "Hedera", "HBAR"},
+    {"zec-zcash", "Zcash", "ZEC"}
 };
 
 static const size_t s_registry_count = sizeof(s_registry) / sizeof(s_registry[0]);
@@ -116,13 +129,13 @@ void market_display_prices(void) {
     const char *separator = "-------------------------------------------------------------------------------";
 
     printf("%s\n", separator);
-    printf(" %-6s %-10s %14s %9s %14s %-20s\n",
+    printf(" %-6s %-12s %12s %9s %14s %-20s\n",
            "SYMBOL", "NAME", "PRICE USD", "24H", "MARKET CAP", "UPDATED");
     printf("%s\n", separator);
 
     for (size_t i = 0; i < s_registry_count; i++) {
         if (!s_cache_valid[i]) {
-            printf(" %-6s %-10s %14s %9s %14s %-20s\n",
+            printf(" %-6s %-12s %12s %9s %14s %-20s\n",
                    s_registry[i].symbol, s_registry[i].name,
                    "N/A", "N/A", "N/A", "N/A");
             continue;
@@ -131,6 +144,7 @@ void market_display_prices(void) {
         const Coin *coin = &s_cache[i];
         char change[16];
         char market_cap[32];
+        char updated[MAX_TIMESTAMP_LEN];
 
         snprintf(change, sizeof(change), "%+.2f%%", coin->percent_change_24h);
         if (coin->market_cap > 0.0) {
@@ -139,9 +153,15 @@ void market_display_prices(void) {
             snprintf(market_cap, sizeof(market_cap), "N/A");
         }
 
-        printf(" %-6s %-10s %14.2f %9s %14s %-20s\n",
-               coin->symbol, coin->name, coin->price_usd,
-               change, market_cap, coin->last_updated);
+        if (coin->last_updated[0] != '\0') {
+            format_wib_time(coin->last_updated, false, updated, sizeof(updated));
+        } else {
+            snprintf(updated, sizeof(updated), "N/A");
+        }
+
+        printf(" %-6s %-12s %12.2f %9s %14s %-20s\n",
+               coin->symbol, s_registry[i].name, coin->price_usd,
+               change, market_cap, updated);
     }
 
     printf("%s\n", separator);

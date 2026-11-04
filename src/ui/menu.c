@@ -2,6 +2,7 @@
 #include "converter/converter.h"
 #include "history/history.h"
 #include "market/market.h"
+#include "utils/time_utils.h"
 #include "utils/validator.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -147,7 +148,7 @@ static int read_symbol(const char *prompt, char *out, size_t size) {
             return 0;
         }
 
-        printf(" Unsupported currency. Supported: BTC, ETH, USDT, BNB, SOL, XRP, DOGE, ADA, USD, IDR, EUR.\n");
+        printf(" Unsupported currency. Use a symbol from the cryptocurrency list or USD/IDR/EUR.\n");
     }
 }
 
@@ -264,7 +265,9 @@ static void print_price_timestamps(const char *from_symbol, const Coin *from_coi
     int printed = 0;
 
     if (from_updated && from_updated[0] != '\0') {
-        printf("%s %s", from_symbol, from_updated);
+        char from_wib[MAX_TIMESTAMP_LEN];
+        format_wib_time(from_updated, true, from_wib, sizeof(from_wib));
+        printf("%s %s", from_symbol, from_wib);
         printed = 1;
     }
 
@@ -272,7 +275,9 @@ static void print_price_timestamps(const char *from_symbol, const Coin *from_coi
         if (printed) {
             printf(" | ");
         }
-        printf("%s %s", to_symbol, to_updated);
+        char to_wib[MAX_TIMESTAMP_LEN];
+        format_wib_time(to_updated, true, to_wib, sizeof(to_wib));
+        printf("%s %s", to_symbol, to_wib);
         printed = 1;
     }
 

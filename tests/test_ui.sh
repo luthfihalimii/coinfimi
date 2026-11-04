@@ -24,6 +24,18 @@ check_contains() {
 OUT=$(printf '2\n\n0\n' | "$BIN")
 check_contains "CRYPTOCURRENCY LIST" "$OUT"
 check_contains "BTC" "$OUT"
+check_contains "USDC" "$OUT"
+check_contains "TRX" "$OUT"
+check_contains "LINK" "$OUT"
+check_contains "XLM" "$OUT"
+check_contains "BCH" "$OUT"
+check_contains "NEAR" "$OUT"
+check_contains "UNI" "$OUT"
+check_contains "LTC" "$OUT"
+check_contains "SUI" "$OUT"
+check_contains "AVAX" "$OUT"
+check_contains "HBAR" "$OUT"
+check_contains "ZEC" "$OUT"
 
 OUT=$(printf '9\n0\n' | "$BIN")
 check_contains "Invalid choice" "$OUT"

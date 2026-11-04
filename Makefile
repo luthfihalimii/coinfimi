@@ -31,6 +31,7 @@ SRCS = src/main.c \
        src/history/history.c \
        src/ui/menu.c \
        src/utils/json_parser.c \
+       src/utils/time_utils.c \
        src/utils/validator.c
 
 OBJS = $(patsubst src/%.c, build/%.o, $(SRCS))
@@ -40,6 +41,7 @@ TEST_CONVERTER_BIN = tests/bin/test_converter
 TEST_VALIDATOR_BIN = tests/bin/test_validator
 TEST_JSON_PARSER_BIN = tests/bin/test_json_parser
 TEST_HISTORY_BIN = tests/bin/test_history
+TEST_TIME_UTILS_BIN = tests/bin/test_time_utils
 TEST_API_CLIENT_BIN = tests/bin/test_api_client
 TEST_UI_SCRIPT = tests/test_ui.sh
 
@@ -57,12 +59,13 @@ build/%.o: src/%.c
 debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -g3 -O0 -DDEBUG
 debug: clean $(TARGET)
 
-test: $(TEST_CONVERTER_BIN) $(TEST_VALIDATOR_BIN) $(TEST_JSON_PARSER_BIN) $(TEST_HISTORY_BIN)
+test: $(TEST_CONVERTER_BIN) $(TEST_VALIDATOR_BIN) $(TEST_JSON_PARSER_BIN) $(TEST_HISTORY_BIN) $(TEST_TIME_UTILS_BIN)
 	@echo "--- Running Unit Tests ---"
 	@./$(TEST_CONVERTER_BIN)
 	@./$(TEST_VALIDATOR_BIN)
 	@./$(TEST_JSON_PARSER_BIN)
 	@./$(TEST_HISTORY_BIN)
+	@./$(TEST_TIME_UTILS_BIN)
 	@echo "--- All Tests Passed Successfully ---"
 
 $(TEST_CONVERTER_BIN): tests/test_converter.c src/converter/converter.c
@@ -81,6 +84,10 @@ $(TEST_HISTORY_BIN): tests/test_history.c src/history/history.c
 	@mkdir -p tests/bin
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
 
+$(TEST_TIME_UTILS_BIN): tests/test_time_utils.c src/utils/time_utils.c
+	@mkdir -p tests/bin
+	$(CC) $(CFLAGS) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
+
 test-api: $(TEST_API_CLIENT_BIN)
 	@echo "--- Running API Integration Test ---"
 	@./$(TEST_API_CLIENT_BIN)
@@ -89,7 +96,7 @@ test-ui: $(TARGET)
 	@echo "--- Running UI Smoke Test ---"
 	@sh $(TEST_UI_SCRIPT) $(TARGET)
 
-$(TEST_API_CLIENT_BIN): tests/test_api_client.c src/api/api_client.c src/utils/json_parser.c src/market/market.c src/converter/converter.c
+$(TEST_API_CLIENT_BIN): tests/test_api_client.c src/api/api_client.c src/utils/json_parser.c src/market/market.c src/converter/converter.c src/utils/time_utils.c
 	@mkdir -p tests/bin
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
